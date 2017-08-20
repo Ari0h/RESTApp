@@ -10,12 +10,12 @@ import java.util.*;
 public class DbHelper {
 
     private Logger logger;
-    public static Map<Integer, Tarif> tarifCash;
+    private static Map<Integer, Tarif> tarifCash;
 
     public DbHelper(Logger log) {
         this.logger = log;
-        tarifCash = new HashMap<Integer, Tarif>() {
-        };
+        tarifCash = new HashMap<>();
+        AmountChangeThread changeThread = new AmountChangeThread();
         try {
             Class.forName("com.mysql.jdbc.Driver").newInstance();
         } catch (Exception ex) {
@@ -23,7 +23,7 @@ public class DbHelper {
         }
     }
 
-    public Connection getConnection() {
+    private Connection getConnection() {
         Connection conn = null;
         try {
             Properties p = new Properties();
@@ -136,7 +136,7 @@ public class DbHelper {
         List<Tarif> tarifs = this.getTarifs();
         if (!tarifs.isEmpty()) {
             for (Tarif tarif : tarifs) {
-                tarifCash.put(tarif.getTarifId(),tarif);
+                tarifCash.put(tarif.getTarifId(), tarif);
             }
         } else {
             logger.info("Tarifs not found");
@@ -170,7 +170,37 @@ public class DbHelper {
 
         @Override
         public void run() {
-
+            try {
+                logger.info("Start change thread");
+                long startTime = System.currentTimeMillis();
+                Map<Integer, Long> updateMap = new HashMap<>();
+                logger.info(updateMap);
+                while (!isInterrupted()) {
+                    if (!tarifCash.isEmpty()) {
+                        Set<Integer> keySet = tarifCash.keySet();
+                        for (int key : keySet) {
+                            Tarif tarif = tarifCash.get(key);
+                            logger.info(updateMap);
+                            long timeUpdate;
+                            if (updateMap.get(tarif.getTarifId()) == null) {
+                                timeUpdate = startTime + (tarif.getTimeChange() * 1000);
+                                updateMap.put(tarif.getTarifId(), timeUpdate);
+                            } else {
+                                timeUpdate = updateMap.get(tarif.getTarifId());
+                            }
+                            logger.info(updateMap);
+                            if (System.currentTimeMillis() >= timeUpdate) {
+                                updateAmount(tarif);
+                                updateMap.put(tarif.getTarifId(), timeUpdate + (tarif.getTimeChange() * 1000));
+                                logger.info(updateMap);
+                            }
+                        }
+                    }
+                    Thread.sleep(5000);
+                }
+            } catch (Exception ex) {
+                logger.error(ex, ex);
+            }
         }
     }
 

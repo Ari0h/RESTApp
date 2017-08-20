@@ -17,9 +17,8 @@ public class Test {
     DbHelper db;
 
     public Test() {
-        logger = Logger.getRootLogger();
-        BasicConfigurator.configure();
-        logger.setLevel(Level.DEBUG);
+        logger = Logger.getLogger(Test.class);
+
         db = new DbHelper(logger);
     }
 

@@ -2,8 +2,6 @@ package RESTApp;
 
 import RESTApp.model.Tarif;
 import com.google.gson.Gson;
-import org.apache.log4j.BasicConfigurator;
-import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 import javax.ws.rs.*;
